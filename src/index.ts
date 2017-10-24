@@ -19,12 +19,13 @@ import * as Subscription from './subscriptions'
 import { IContext } from './types'
 import { Date, formatError } from './utils'
 
-const { NODE_ENV, PORT, MONGO_URL, SECRET } = process.env
+const { NODE_ENV, PORT, MONGO_URL, SECRET, JWT_SECRET } = process.env
 
 // This is necessary because graphql-tools
 // looks for __esModule in the schema otherwise
 delete (resolvers as any).__esModule
 
+;(async () => {
 const resolverMap = {
   ...resolvers,
   Subscription,
@@ -61,6 +62,8 @@ const context: IContext = {
   getDb,
 }
 
+;(global as any).db = await getDb()
+
 const router = new Router()
 
 router.get('/healthcheck', ctx => {
@@ -84,6 +87,7 @@ router.all(
 )
 
 app.use(router.routes()).use(router.allowedMethods())
+
 const ws = createServer(app.callback())
   ws.listen(PORT, () => {
     console.log(`Apollo Server is now running on http://localhost:${PORT}`)
@@ -102,3 +106,4 @@ const ws = createServer(app.callback())
   })
 console.log(`Running at ${PORT}/${SECRET}; Node env: ${NODE_ENV}`)
 // app.listen(PORT)
+})()
